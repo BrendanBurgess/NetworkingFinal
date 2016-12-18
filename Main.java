@@ -110,16 +110,15 @@ public class Main {
 	public void quitMulticast(String[] values){
 		int multicast = Integer.parseInt(values[3]);
 		int node = correctNodeValue(Integer.parseInt(values[2]));
-		HashSet<Integer> nodes = multicasts.get(node).members;
+		HashSet<Integer> nodes = multicasts.get(multicast).members;
 		HashSet<Integer> newNodes = new HashSet<>();
 		for(int n: nodes){
 			if(n != node) newNodes.add(n);
 		}
-		multicasts.get(node).members = newNodes;
+		multicasts.get(multicast).members = newNodes;
 	}
 
 	public void forwardMulticast(String[] values){
-		System.out.println("hit the multis");
 		int multicast = Integer.parseInt(values[3]);
 		int node = correctNodeValue(Integer.parseInt(values[2]));
 		int time = Integer.parseInt(values[0]);
@@ -127,9 +126,31 @@ public class Main {
 		if(multicasts.get(multicast).TTL < time) return;
 
 		HashMap<Integer, Integer> validNodes = onPath(node);
+		HashSet<Integer> next = new HashSet<Integer>();
+		boolean tripped = false;
 		for(int n: multicasts.get(multicast).members){
-			if(validNodes.containsKey(n)) printForwardU(time, n, validNodes.get(n));
+			if(validNodes.containsKey(n)){
+				next.add(validNodes.get(n));
+				tripped = true;
+			}
 		}
+
+		if (!tripped){
+			dropMulticast(time, multicast, node);
+			return;
+		}
+
+		for(int n: next){
+			prinMulticast(time, multicast, n);
+		}
+	}
+
+	public void prinMulticast(int time, int multi, int next){
+		System.out.println("FMP " + time + " " + multi + " " + translateReverse.get(next));
+	}
+
+	public void dropMulticast(int time, int multi, int source){
+		System.out.println("DMP " + time + " " + multi + " " + translateReverse.get(source));
 	}
 
 	public void linkState(String[] values){
@@ -261,7 +282,6 @@ public class Main {
 			}
 		}
 
-		System.out.println("Here?");
 		HashMap<Integer, Integer> valids = new HashMap<>();
 		for(Integer node: nodes){
 			if(node == source) continue;
@@ -276,7 +296,6 @@ public class Main {
 				current = par.get(current);
 			}
 		}
-		System.out.println(valids.toString());
 		return valids;
 	}
 
